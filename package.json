@@ -15,5 +15,10 @@
   "bugs": {
     "url": "https://github.com/ethanmnrd/discord-bot/issues"
   },
-  "homepage": "https://github.com/ethanmnrd/discord-bot#readme"
+  "homepage": "https://github.com/ethanmnrd/discord-bot#readme",
+  "dependencies": {
+    "clean": "^4.0.2",
+    "discord.js": "^11.5.1",
+    "node-opus": "^0.2.7"
+  }
 }
