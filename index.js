@@ -1,3 +1,4 @@
+require("dotenv").config();
 const Discord = require("discord.js");
 const client = new Discord.Client();
 
@@ -11,6 +12,6 @@ client.on("message", msg => {
   }
 });
 
-client.login("NjIzOTIzMTU1NTI1OTU5NzIw.XYJfxw.PScGadEfthdcJqI8KgnlETwSsq0");
+client.login(process.env.BOT_KEY);
 
 // https://discordapp.com/oauth2/authorize?client_id=623923155525959720&scope=bot
