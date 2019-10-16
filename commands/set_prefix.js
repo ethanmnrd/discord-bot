@@ -1,4 +1,4 @@
-var { prefix } = require("../config.json");
+const config = require("../config.json");
 
 // sets global prefix for cmds
 function set_prefix(new_prefix) {
@@ -8,9 +8,9 @@ function set_prefix(new_prefix) {
     if (is_num_or_letter(new_prefix)) {
       return `Prefix cannot be letters or numbers.`;
     } else {
-      prefix = new_prefix;
-      console.log(`Current prefix is "${prefix}"`);
-      return `Current prefix is "${prefix}"`;
+      config.prefix = new_prefix;
+      console.log(`Current prefix is "${config.prefix}"`);
+      return `Current prefix is "${config.prefix}"`;
     }
   }
 }
@@ -27,7 +27,10 @@ function is_num_or_letter(char) {
 module.exports = {
   name: "set_prefix",
   description: "Sets the prefix to the desired character.",
+  args: true,
+  usage: "<single char>",
+  serverOnly: true,
   execute(msg, args) {
-    msg.channel.send(set_prefix(args[0]));
+    return msg.channel.send(set_prefix(args[0]));
   }
 };
