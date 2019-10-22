@@ -1,14 +1,19 @@
-const config = require("../config.json");
+var config = require("../config.json");
+var fs = require("fs");
 
 // sets global prefix for cmds
 function set_prefix(new_prefix) {
   if (new_prefix.length != 1) {
-    return `Prefix must be of length 1.`;
+    // return `Prefix must be of length 1.`;
   } else {
     if (is_num_or_letter(new_prefix)) {
       return `Prefix cannot be letters or numbers.`;
     } else {
       config.prefix = new_prefix;
+      fs.writeFile("../config.json", JSON.stringify(config), "utf8", err =>
+        console.log(err)
+      );
+
       console.log(`Current prefix is "${config.prefix}"`);
       return `Current prefix is "${config.prefix}"`;
     }

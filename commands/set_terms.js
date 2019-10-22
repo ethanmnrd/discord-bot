@@ -1,5 +1,3 @@
-var { terms } = require("../config.json");
-
 function set_terms(new_terms) {
   terms = new_terms;
   return `Terms have been set.`;
