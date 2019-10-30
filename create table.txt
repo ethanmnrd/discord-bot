@@ -1,0 +1,60 @@
+
+USE bugbot;
+
+drop table guilds;
+CREATE TABLE guilds (
+guildId BIGINT UNSIGNED,	
+PRIMARY KEY (guildid)
+);
+
+drop table votesettings;
+CREATE TABLE voteSettings (
+guildId BIGINT UNSIGNED,
+timeLimit int DEFAULT 20000,
+votesNeeded int DEFAULT 3,
+#FOREIGN KEY (guildId) REFERENCES guilds(guildId)
+);
+
+drop procedure createGuild;
+DELIMITER //
+CREATE PROCEDURE createGuild (guildId BIGINT UNSIGNED)
+BEGIN
+    INSERT INTO guilds VALUES(guildId);
+    INSERT INTO votesettings (guildId) VALUES (guildId);
+END//
+DELIMITER ;
+
+drop procedure getGuilds;
+DELIMITER //
+CREATE PROCEDURE getGuilds (guildId BIGINT UNSIGNED)
+BEGIN
+    SELECT * FROM guilds;
+END//
+DELIMITER ;
+
+drop procedure getVoteSettings;
+DELIMITER //
+CREATE PROCEDURE getVoteSettings (guildId BIGINT UNSIGNED)
+BEGIN
+    SELECT timeLimit, votesNeeded FROM voteSettings 
+    WHERE voteSettings.guildId = guildId;
+END//
+DELIMITER ;
+
+drop procedure setVotesNeeded;
+DELIMITER //
+CREATE PROCEDURE setVotesNeeded (guildId BIGINT UNSIGNED,votesNeeded INT)
+BEGIN
+    UPDATE votesettings SET votesettings.votesNeeded = votesNeeded
+    WHERE votesettings.guildId = guildId;
+END//
+DELIMITER ;
+
+drop procedure setTimeNeeded;
+DELIMITER //
+CREATE PROCEDURE setTimeNeeded (guildId BIGINT UNSIGNED, timeLimit INT)
+BEGIN
+    UPDATE votesettings SET votesettings.timeLimit = timeLimit
+    WHERE votesettings.guildId = guildId;
+END//
+DELIMITER ;

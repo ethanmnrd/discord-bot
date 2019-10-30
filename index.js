@@ -1,22 +1,19 @@
 require("dotenv").config();
-var votemute = require('./leos-code/createVote.js')
+var votemute = require('./leos-code/createVote.js');
 const prefix = '!bot';
-const  mysql = require('mysql');
 const discord = require('discord.js');
 const client = new discord.Client();
-var muteRoleName = "bugbot";
 // var connection = connectToDatabase();
-
-var guildsVoting = new Map();
 
 console.log('success');
 
 client.once('ready', () => {
-    console.log('Ready!');
+    console.log('Ready! - vs');
     console.log(' ')
 });
 
 client.on('message', message => {
+
     if ( message.author.bot || !isCallBotMessage(message)){
         return;
     }
@@ -34,11 +31,58 @@ client.on('message', message => {
         message.channel.send("pong.");
     }
 
-    else if (argument = 'v'){
-        votemute(message,guildsVoting);
+    else if (argument == 'votekick'){
+        votemute.createVote(message, 'votekick');
     }
-});
 
+    else if (argument == 'votemute'){
+        votemute.createVote(message,'votemute');
+    }
+
+    else if (argument == "del"){
+        votemute.deleteRole(message);
+    }
+
+    // else if (argument == "mute"){
+    //     var userAgainst = message.mentions.members.first();
+    //     var muteRole = message.channel.guild.roles.find(val => val.name === muteRoleName);
+    //     userAgainst.addRole(muteRole.id);
+    // }
+
+    // else if (argument == "unmute"){
+    //     var userAgainst = message.mentions.members.first();
+    //     var muteRole = message.channel.guild.roles.find(val => val.name === muteRoleName);
+    //     userAgainst.removeRole(muteRole.id);
+    // }
+
+    else if (argument == "selectall"){
+        votemute.selectAll();
+    }
+    else if (argument == "insert"){
+        votemute.insertGuild(message.guild.id);
+    }
+    
+    else if (argument == "setvotes"){
+        votemute.setVotesNeeded(message,wordArray[2]);
+    }
+    
+    else if (argument == "settime"){
+        votemute.setTimeNeeded(message,wordArray[2]);
+    }
+    else if (argument == "viewsettings"){
+        votemute.viewSettings(message);
+    }
+    else if (argument == "viewsettings"){
+        votemute.viewSettings(message);
+    }
+    else if (argument == "help"){
+        votemute.sayHelp(message);
+    }
+    else{
+        message.channel.send("Invalid command. Say '" + prefix + " help' for commmand list.");
+    }
+ 
+});
 
 //is the message meant for the bot?
 function isCallBotMessage(message){
@@ -55,7 +99,6 @@ function isCallBotMessage(message){
         return false;
     }
     return true;
-
 }
 
 client.login(process.env.BOT_KEY);
