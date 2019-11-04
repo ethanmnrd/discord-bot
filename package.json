@@ -1,7 +1,7 @@
 {
   "name": "discord-bot",
   "version": "1.0.0",
-  "description": "Minigame Discord Bot using ML to beat users.",
+  "description": "Discord Bot using ML to beat users in games.",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -19,6 +19,8 @@
   "dependencies": {
     "@discordjs/uws": "^10.149.0",
     "clean": "^4.0.2",
-    "discord.js": "^11.5.1"
+    "discord.js": "^11.5.1",
+    "dotenv": "^8.2.0",
+    "mysql2": "^2.0.0"
   }
 }

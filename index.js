@@ -1,10 +1,15 @@
+require("dotenv").config();
 const fs = require("fs");
 const Discord = require("discord.js");
-const config = require("./config.json");
-
 const client = new Discord.Client();
-client.commands = new Discord.Collection();
 
+// db connection var
+var db = require("./db");
+
+var config = require("./config.json");
+
+// Loads commands from commands directory
+client.commands = new Discord.Collection();
 const commandFiles = fs
   .readdirSync("./commands")
   .filter(file => file.endsWith(".js"));
@@ -54,11 +59,25 @@ client.on("message", msg => {
   }
 });
 
-function set_terms(new_terms) {
-  terms = new_terms;
-  return `Terms have been set.`;
+client.on("guildCreate", guild => {
+  console.log("INSERTING GUILD INTO DATABASE");
+  insertGuild(guild.id);
+});
+
+function insertGuild(guildId) {
+  console.log(guildId);
+  let sql = "CALL createGuild(?)";
+  db.query(sql, guildId, (error, results, fields) => {
+    if (error) {
+      if (error.code == "ER_DUP_ENTRY") {
+        console.log("duplicate entry");
+        return;
+      }
+      console.log(error);
+    }
+  });
 }
 
-client.login(config.token);
+client.login(process.env.BOT_KEY);
 
 // https://discordapp.com/oauth2/authorize?client_id=623923155525959720&scope=bot
