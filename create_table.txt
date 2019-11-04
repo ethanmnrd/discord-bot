@@ -1,0 +1,74 @@
+DROP DATABASE bugbot;
+CREATE DATABASE bugbot;
+
+USE bugbot;
+
+CREATE TABLE guilds (
+guildId BIGINT UNSIGNED,	
+PRIMARY KEY (guildid)
+);
+
+CREATE TABLE guildSettings (
+guildId BIGINT UNSIGNED,
+timeLimit int DEFAULT 20000,
+votesNeeded int DEFAULT 3,
+prefix char DEFAULT '!',
+terms varchar(255) DEFAULT 'This is the default terms and conditions message. Upon accepting, you comply with all server rules and agree that these rules are up to moderator interpretation. To set these terms, use !set terms',
+CONSTRAINT FK_guildid  FOREIGN KEY (guildId) REFERENCES guilds(guildId)
+	ON UPDATE CASCADE ON DELETE CASCADE
+);
+
+DELIMITER //
+CREATE PROCEDURE createGuild (guildId BIGINT UNSIGNED)
+BEGIN
+    INSERT INTO guilds VALUES(guildId);
+    INSERT INTO guildSettings (guildId) VALUES (guildId);
+END//
+DELIMITER ;
+
+DELIMITER //
+CREATE PROCEDURE getGuilds (guildId BIGINT UNSIGNED)
+BEGIN
+    SELECT * FROM guilds;
+END//
+DELIMITER ;
+
+DELIMITER //
+CREATE PROCEDURE getVoteSettings (guildId BIGINT UNSIGNED)
+BEGIN
+    SELECT timeLimit, votesNeeded FROM guildSettings 
+    WHERE guildSettings.guildId = guildId;
+END//
+DELIMITER ;
+
+DELIMITER //
+CREATE PROCEDURE getGuildSettings (guildId BIGINT UNSIGNED)
+BEGIN
+    SELECT * FROM guildSettings 
+    WHERE guildSettings.guildId = guildId;
+END//
+DELIMITER ;
+
+DELIMITER //
+CREATE PROCEDURE setVotesNeeded (guildId BIGINT UNSIGNED,votesNeeded INT)
+BEGIN
+    UPDATE guildSettings SET guildSettings.votesNeeded = votesNeeded
+    WHERE guildSettings.guildId = guildId;
+END//
+DELIMITER ;
+
+DELIMITER //
+CREATE PROCEDURE setTimeNeeded (guildId BIGINT UNSIGNED, timeLimit INT)
+BEGIN
+    UPDATE guildSettings SET guildSettings.timeLimit = timeLimit
+    WHERE guildSettings.guildId = guildId;
+END//
+DELIMITER ;
+
+DELIMITER //
+CREATE PROCEDURE setGuildPrefix (guildId BIGINT UNSIGNED, prefix CHAR)
+BEGIN
+	UPDATE guildSettings SET guildSettings.prefix = prefix
+    WHERE guildSettings.guildId = guildId;
+END//
+DELIMITER ;
