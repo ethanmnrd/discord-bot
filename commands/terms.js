@@ -1,4 +1,4 @@
-const { terms } = require("../config.json");
+var config = require("../config.json");
 
 function makeWelcomeChannel(msg) {
   var server = msg.guild;
@@ -26,7 +26,8 @@ function makeWelcomeChannel(msg) {
           c => c.name == "welcome" && c.type == "category"
         );
 
-        if (!category) throw new Error("welcome category channel does not exist");
+        if (!category)
+          throw new Error("welcome category channel does not exist");
         channel.setParent(category.id);
       })
       .catch(console.error);
@@ -44,7 +45,19 @@ function sendTerms(msg) {
 
   if (!welcomeChannel)
     throw new Error("welcome-and-rules text channel does not exist");
-  welcomeChannel.send(terms).then(sentMsg => {
+  welcomeChannel
+    .fetchMessages()
+    .then(msgs => {
+      const botMsgs = msgs.filter(msg => msg.author.bot);
+      welcomeChannel.bulkDelete(botMsgs);
+      console.log("Old terms message(s) deleted.");
+    })
+    .catch(err => {
+      console.error("Deletion of exising bot message failed.");
+      console.error("No bot message pre-existing.");
+      console.error(err);
+    });
+  welcomeChannel.send(config.terms).then(sentMsg => {
     sentMsg
       .react("🆗")
       .then(() => sentMsg.react("❌"))
