@@ -80,4 +80,4 @@ function insertGuild(guildId) {
 
 client.login(process.env.BOT_KEY);
 
-// https://discordapp.com/oauth2/authorize?client_id=623923155525959720&scope=bot
+// https://discordapp.com/oauth2/authorize?client_id=&scope=bot
