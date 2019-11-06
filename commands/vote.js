@@ -3,6 +3,7 @@ var db = require("../db");
 
 const mutePrefix = "mute";
 const kickPrefix = "kick";
+const muteRoleName = "bugbot-gag-role";
 
 //filters for m and k prefix, then calls addvote() to do all the work
 function createVote(message, voteType) {

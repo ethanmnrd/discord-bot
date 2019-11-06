@@ -2,6 +2,8 @@ require("dotenv").config();
 const fs = require("fs");
 const Discord = require("discord.js");
 const client = new Discord.Client();
+const muteRoleName = "bugbot-gag-role";
+var muteRolePermissions = {SPEAK:false, SEND_MESSAGES:false};
 
 // db connection var
 var db = require("./db");
@@ -77,6 +79,45 @@ function insertGuild(guildId) {
     }
   });
 }
+
+
+//on joining a guild, create the gag role. Wrap it in promise to make sure role exists before adding to channels
+client.on('guildCreate', guild => {
+  var makeSureRoleExists = new Promise((resolve, reject) => {
+      var muteRole = guild.roles.find(val => val.name === muteRoleName); //look for gag
+      if(muteRole != null){ //role already exists
+          console.log('found');
+          resolve(muteRole); //return role to promise
+      }
+      else{ //role does not exist
+          console.log('not found - creating');
+          //create role and return it to promise
+          guild.createRole({name:muteRoleName,color:'RED', position:0},'Reason for creating role').then((role) => resolve(role));
+      }
+      console.log('done createrole function');
+  },10000);
+  makeSureRoleExists.then((muteRole) => {
+      for (var [key, channel] of guild.channels) { //add gag role to each channel. If same role added twice, everything is fine.
+          console.log(key + ' goes to ' + channel.name);
+          channel.overwritePermissions(muteRole, muteRolePermissions); 
+        }
+  });
+
+});
+
+//when a channel is created, add the gag role to it
+//also event is called on each channel when 
+client.on('channelCreate',channel =>{
+  console.log('saw fresh channel ' + channel.name);
+  var muteRole = channel.guild.roles.find(val => val.name === muteRoleName);
+  if(muteRole == null){ //role DNE, fresh to server. Ignore all fresh channels. For some reason, does this on re-add to server but that's ok.
+      console.log("New to server, don't do anything");
+      return;
+  }
+  else{
+  channel.overwritePermissions(muteRole, muteRolePermissions);
+  }
+});
 
 client.login(process.env.BOT_KEY);
 
