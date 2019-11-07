@@ -6,7 +6,15 @@ const client = new Discord.Client();
 // db connection var
 var db = require("./db");
 
-var config = require("./config.json");
+// Key-value package for prefix management
+var Keyv = require("keyv");
+const prefixes = new Keyv(
+  `mysql://root:${process.env.DB_PASSWORD}@localhost:3306/${process.env.DB_NAME}`
+);
+prefixes.on("error", err => console.error("Keyv connection error:", err));
+
+// Global / Default prefix to search for in message
+const globalPrefix = "!";
 
 // Loads commands from commands directory
 client.commands = new Discord.Collection();
@@ -23,39 +31,49 @@ client.on("ready", () => {
   console.log(`Logged in as ${client.user.tag}!`);
 });
 
-client.on("message", msg => {
-  if (msg.content === "current_prefix") {
-    console.log(`Current prefix is "${config.prefix}"`);
-    msg.channel.send(`Current prefix is "${config.prefix}"`);
+client.on("message", async message => {
+  if (message.content === "current_prefix") {
+    message.channel.send(
+      `Current prefix is "${(await prefixes.get(message.guild.id)) ||
+        globalPrefix}"`
+    );
   }
 
-  if (!msg.content.startsWith(config.prefix) || msg.author.bot) return;
+  if (message.author.bot) return;
 
-  var args = msg.content.slice(config.prefix.length).split(/ +/);
+  if (message.content.startsWith(globalPrefix)) {
+    prefix = globalPrefix;
+  } else {
+    const guildPrefix = await prefixes.get(message.guild.id);
+    if (message.content.startsWith(guildPrefix)) prefix = guildPrefix;
+  }
+
+  if (!prefix) return;
+  var args = message.content.slice(prefix.length).split(/ +/);
   var cmdName = args.shift().toLowerCase();
 
   if (!client.commands.has(cmdName)) return;
 
   var cmd = client.commands.get(cmdName);
 
-  if (cmd.serverOnly && msg.channel.type !== "text") {
-    return msg.reply("I can't execute that command inside DMs!");
+  if (cmd.serverOnly && message.channel.type !== "text") {
+    return message.reply("I can't execute that command inside DMs!");
   }
 
   if (cmd.args && !args.length) {
-    let reply = `You didn't provide any arguments, ${msg.author}!`;
+    let reply = `You didn't provide any arguments, ${message.author}!`;
 
     if (cmd.usage) {
       reply += `\nThe proper usage would be: \`${config.prefix}${cmd.name} ${cmd.usage}\``;
     }
-    return msg.channel.send(reply);
+    return message.channel.send(reply);
   }
 
   try {
-    cmd.execute(msg, args);
+    cmd.execute(message, args);
   } catch (error) {
     console.error(error);
-    msg.reply("There was an error trying to execute that command!");
+    message.reply("There was an error trying to execute that command!");
   }
 });
 

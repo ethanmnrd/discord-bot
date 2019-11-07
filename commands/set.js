@@ -17,7 +17,7 @@ function doSet(message, option, new_option) {
       setTime(message, new_option);
       break;
     case "terms":
-      setTerms(args.join(" "));
+      setTerms(message, new_option);
       break;
     case "prefix":
       setPrefix(message, new_option);
@@ -32,15 +32,8 @@ function setVotes(message, amount) {
   if (!Number.isInteger(amount)) {
     return "Vote option must be set to an integer!";
   }
-  let sql = "CALL setVotesNeeded(" + message.guild.id + "," + amount + ");";
-  var waitForQuery = sqlPromise(message, sql, "Error setting votes");
-  waitForQuery
-    .then(result => {
-      viewSettings(message);
-    })
-    .catch(error => {
-      sayDatabaseError(message, error);
-    });
+
+  callProcedure("setVotesNeeded", message.guild.id, amount);
 }
 
 function setTime(message, amount) {
@@ -49,15 +42,7 @@ function setTime(message, amount) {
     return "Time must be set to a number (milliseconds)";
   }
 
-  let sql = "CALL setTimeNeeded(" + message.guild.id + "," + amount + ");";
-  var waitForQuery = sqlPromise(message, sql, "Error setting votes");
-  waitForQuery
-    .then(result => {
-      viewSettings(message);
-    })
-    .catch(error => {
-      sayDatabaseError(message, error);
-    });
+  callProcedure("setTimeNeeded", message.guild.id, amount);
 }
 
 function setPrefix(message, new_prefix) {
@@ -67,22 +52,13 @@ function setPrefix(message, new_prefix) {
     if (is_num_or_letter(new_prefix)) {
       return `Prefix cannot be letters or numbers.`;
     } else {
-      let sql = `CALL setGuildPrefix(${message.guild.id}, "${new_prefix}");`;
-      var waitForQuery = sqlPromise(message, sql, "Error setting prefix");
-      waitForQuery
-        .then(result => {
-          viewSettings(message);
-        })
-        .catch(error => {
-          sayDatabaseError(message, error);
-        });
+      callProcedure("setGuildPrefix", message.guild.id, new_prefix);
     }
   }
 }
 
-function setTerms(new_terms) {
-  terms = new_terms;
-  return `Terms have been set.`;
+function setTerms(message, new_terms) {
+  callProcedure("setGuildTerms", message.guild.id, new_terms);
 }
 
 // Checks if char is a num or letter (not allowed)
@@ -115,6 +91,18 @@ function sqlPromise(message, sql, errorMessage) {
     );
   });
   return waitForQuery;
+}
+
+function callProcedure(procedure, guild, value) {
+  let sql = `CALL ${procedure}(${guild}, ${value});`;
+  var waitForQuery = sqlPromise(message, sql, `Error calling ${procedure}`);
+  waitForQuery
+    .then(result => {
+      viewSettings(message);
+    })
+    .catch(error => {
+      sayDatabaseError(message, error);
+    });
 }
 
 function viewSettings(message) {
@@ -157,6 +145,6 @@ module.exports = {
   serverOnly: true,
   usage: "<option> <new_option>",
   execute(message, args) {
-    return message.channel.send(doSet(message, args[0], args[1]));
+    return message.channel.send(doSet(message, args[0], args.join(" ")));
   }
 };
