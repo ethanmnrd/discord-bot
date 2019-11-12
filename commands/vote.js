@@ -1,9 +1,9 @@
 var guildMap = new Map();
 var db = require("../db");
 
+
 const mutePrefix = "mute";
 const kickPrefix = "kick";
-const muteRoleName = "bugbot-gag-role";
 
 //filters for m and k prefix, then calls addvote() to do all the work
 function createVote(message, voteType) {
@@ -162,7 +162,7 @@ function VoteAgainstUser(voteType, userAgainst, deleteTimeOut, votesNeeded) {
       } else if (this.voteType == mutePrefix) {
         say(message, "muting " + this.userAgainst.displayName + "...");
         var muteRole = message.channel.guild.roles.find(
-          val => val.name === muteRoleName
+          val => val.name === global.gagRoleName
         );
         this.userAgainst.addRole(muteRole.id);
         this.userAgainst.setVoiceChannel(null);

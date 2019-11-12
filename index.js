@@ -2,8 +2,6 @@ require("dotenv").config();
 const fs = require("fs");
 const Discord = require("discord.js");
 const client = new Discord.Client();
-const muteRoleName = "bugbot-gag-role";
-var muteRolePermissions = {SPEAK:false, SEND_MESSAGES:false};
 
 // db connection var
 var db = require("./db");
@@ -61,11 +59,39 @@ client.on("message", msg => {
   }
 });
 
+//========================================= LEOS CODE STARTS HERE ============================
+
+//DECLARING GLOBALS
+global.variable = "moo";
+global.gagRoleName = "bugbot-gag-role";
+global.successColor = "#0CBA00";
+
+global.hello = function(){
+    console.log("hello world");
+};
+global.isOwner = function(msg){
+    var ownerId = msg.guild.ownerID;
+    var authorId = msg.author.id;
+    console.log(authorId);
+    console.log(ownerId);
+    if(ownerId == authorId){
+        console.log('returning true');
+        return true;
+    }
+    msg.channel.send("You are not the owner of this server!");
+    return false;
+    
+};
+
+
+//DECLARING EVENTS
+
 client.on("guildCreate", guild => {
   console.log("INSERTING GUILD INTO DATABASE");
   insertGuild(guild.id);
 });
 
+var muteRolePermissions = {SPEAK:false, SEND_MESSAGES:false};
 function insertGuild(guildId) {
   console.log(guildId);
   let sql = "CALL createGuild(?)";
@@ -80,11 +106,10 @@ function insertGuild(guildId) {
   });
 }
 
-
 //on joining a guild, create the gag role. Wrap it in promise to make sure role exists before adding to channels
 client.on('guildCreate', guild => {
   var makeSureRoleExists = new Promise((resolve, reject) => {
-      var muteRole = guild.roles.find(val => val.name === muteRoleName); //look for gag
+      var muteRole = guild.roles.find(val => val.name === global.gagRoleName); //look for gag
       if(muteRole != null){ //role already exists
           console.log('found');
           resolve(muteRole); //return role to promise
@@ -92,7 +117,7 @@ client.on('guildCreate', guild => {
       else{ //role does not exist
           console.log('not found - creating');
           //create role and return it to promise
-          guild.createRole({name:muteRoleName,color:'RED', position:0},'Reason for creating role').then((role) => resolve(role));
+          guild.createRole({name:global.gagRoleName,color:'RED', position:0},'Reason for creating role').then((role) => resolve(role));
       }
       console.log('done createrole function');
   },10000);
@@ -109,7 +134,7 @@ client.on('guildCreate', guild => {
 //also event is called on each channel when 
 client.on('channelCreate',channel =>{
   console.log('saw fresh channel ' + channel.name);
-  var muteRole = channel.guild.roles.find(val => val.name === muteRoleName);
+  var muteRole = channel.guild.roles.find(val => val.name === global.gagRoleName);
   if(muteRole == null){ //role DNE, fresh to server. Ignore all fresh channels. For some reason, does this on re-add to server but that's ok.
       console.log("New to server, don't do anything");
       return;
@@ -119,6 +144,6 @@ client.on('channelCreate',channel =>{
   }
 });
 
-client.login(process.env.BOT_KEY);
+//================================== LEOS CODE ENDS HERE =================================================
 
-// https://discordapp.com/oauth2/authorize?client_id=&scope=bot
+client.login(process.env.BOT_KEY);

@@ -1,12 +1,18 @@
 const Discord = require("discord.js");
-var db = require("../db");
-
+var db = require("../db"); //connection
+const sqlFunctions = require("../requires/sql.js"); //functions
 var { terms } = require("../config.json");
 
+const maxVotes = 100;
+const minVotes = 1;
+
+const maxTime = 300000;
+const minTime = 1000
+
 // For Rich Embeds
-const color = "#0CBA00";
 
 function doSet(message, option, new_option) {
+  sqlFunctions.test();
   if (!option) return "Needs something to set!";
   if (!new_option) return "Needs a new setting for option!";
   switch (option) {
@@ -32,14 +38,20 @@ function setVotes(message, amount) {
   if (!Number.isInteger(amount)) {
     return "Vote option must be set to an integer!";
   }
+  
+  if(amount < minVotes || amount > maxVotes){
+      message.channel.send('Votes cannot be lower than ' + minVotes + ' or higher than ' + maxVotes + '.');
+      return;
+  }
+  
   let sql = "CALL setVotesNeeded(" + message.guild.id + "," + amount + ");";
-  var waitForQuery = sqlPromise(message, sql, "Error setting votes");
+  var waitForQuery = sqlFunctions.sqlPromise(message, sql, "Error setting votes");
   waitForQuery
     .then(result => {
-      viewSettings(message);
+      sqlFunctions.viewSettings(message);
     })
     .catch(error => {
-      sayDatabaseError(message, error);
+      sqlFunctions.sayDatabaseError(message, error);
     });
 }
 
@@ -49,14 +61,19 @@ function setTime(message, amount) {
     return "Time must be set to a number (milliseconds)";
   }
 
+   if(amount < minTime || amount > maxTime){
+      message.channel.send('Time cannot be lower than ' + minTime + ' milliseconds or higher than ' + maxTime + ' milliseconds.');
+      return;
+  }
+
   let sql = "CALL setTimeNeeded(" + message.guild.id + "," + amount + ");";
-  var waitForQuery = sqlPromise(message, sql, "Error setting votes");
+  var waitForQuery = sqlFunctions.sqlPromise(message, sql, "Error setting votes");
   waitForQuery
     .then(result => {
-      viewSettings(message);
+      sqlFunctions.viewSettings(message);
     })
     .catch(error => {
-      sayDatabaseError(message, error);
+      sqlFunctions.sayDatabaseError(message, error);
     });
 }
 
@@ -68,13 +85,13 @@ function setPrefix(message, new_prefix) {
       return `Prefix cannot be letters or numbers.`;
     } else {
       let sql = `CALL setGuildPrefix(${message.guild.id}, "${new_prefix}");`;
-      var waitForQuery = sqlPromise(message, sql, "Error setting prefix");
+      var waitForQuery = sqlFunctions.sqlPromise(message, sql, "Error setting prefix");
       waitForQuery
         .then(result => {
-          viewSettings(message);
+          sqlFunctions.viewSettings(message);
         })
         .catch(error => {
-          sayDatabaseError(message, error);
+          sqlFunctions.sayDatabaseError(message, error);
         });
     }
   }
@@ -94,62 +111,6 @@ function is_num_or_letter(char) {
   return (char >= 97 && char <= 122) || (char >= 48 && char <= 57);
 }
 
-//returns a promise of sql query, which resolves on result.
-//says message to channel on error
-//places guildid in ? slot.
-function sqlPromise(message, sql, errorMessage) {
-  var waitForQuery = new Promise((resolve, reject) => {
-    db.query(
-      sql,
-      (error, results, fields) => {
-        if (error) {
-          console.log(error); //this probably isn't sent. I don't know why. I can send it later on down the function line.
-          message.channel.send(errorMessage); //this isn't sent. I don't know why. I can send it later on down the function line though.
-          reject(error);
-        } else {
-          console.log("resolving results");
-          resolve(results);
-        }
-      },
-      5000
-    );
-  });
-  return waitForQuery;
-}
-
-function viewSettings(message) {
-  var sql = "SELECT * FROM guildsettings WHERE guildId = " + message.guild.id;
-  console.log(sql);
-  var query = sqlPromise(message, sql, "error retreiving guild settings");
-  query
-    .then(results => {
-      var results = results[0];
-      const embed = new Discord.RichEmbed()
-        .setColor(color)
-        .addField(
-          "Votes needed: " + results.votesNeeded,
-          "Number of votes needed within timeframe to successfully kick or mute a user."
-        )
-        .addField(
-          "Time limit: " + results.timeLimit,
-          " The amount of time there is to cast votes against a user until the vote expires."
-        )
-        .addField(
-          `Prefix: ${results.prefix}`,
-          " The currently set prefix for this guild"
-        );
-      message.channel.send(embed);
-    })
-    .catch(error => {
-      sayDatabaseError(message, error);
-    });
-}
-
-function sayDatabaseError(message, error) {
-  message.channel.send("There was an error accessing the database.");
-  console.log(error);
-}
-
 module.exports = {
   name: "set",
   description: "Set options for bot.",
@@ -157,6 +118,6 @@ module.exports = {
   serverOnly: true,
   usage: "<option> <new_option>",
   execute(message, args) {
-    return message.channel.send(doSet(message, args[0], args[1]));
+    doSet(message, args[0], args[1]);
   }
 };
