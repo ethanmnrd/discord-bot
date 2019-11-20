@@ -72,3 +72,11 @@ BEGIN
     WHERE guildSettings.guildId = guildId;
 END//
 DELIMITER ;
+
+DELIMITER //
+CREATE PROCEDURE setGuildTerms (guildId BIGINT UNSIGNED, terms VARCHAR(255))
+BEGIN
+	UPDATE guildSettings SET guildSettings.terms = terms
+    WHERE guildSettings.guildId = guildId;
+END//
+DELIMITER ;
