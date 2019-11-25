@@ -1,7 +1,7 @@
 var db = require("../db");
 const Discord = require("discord.js");
 function viewSettings(message) {
-  var sql = "SELECT * FROM guildsettings WHERE guildId = " + message.guild.id;
+  var sql = "SELECT * FROM guildSettings WHERE guildId = " + message.guild.id;
   console.log(sql);
   var query = sqlPromise(message, sql, "error retreiving guild settings");
   query
@@ -21,7 +21,7 @@ function viewSettings(message) {
           `Prefix: ${results.prefix}`,
           " The currently set prefix for this guild"
         );
-      message.channel.send(embedMsg);
+     message.channel.send(embedMsg);
     })
     .catch(error => {
       sayDatabaseError(message, error);
@@ -32,13 +32,13 @@ function viewSettings(message) {
 //says message to channel on error
 //places guildid in ? slot.
 function sqlPromise(message, sql, errorMessage) {
-  return new Promise((resolve, reject) => {
+  var waitForQuery = new Promise((resolve, reject) => {
     db.query(
       sql,
       (error, results, fields) => {
         if (error) {
-          //  console.log(error); //this probably isn't sent. I don't know why. I can send it later on down the function line.
-          //  message.channel.send(errorMessage); //this isn't sent. I don't know why. I can send it later on down the function line though.
+        //  console.log(error); //this probably isn't sent. I don't know why. I can send it later on down the function line.
+        //  message.channel.send(errorMessage); //this isn't sent. I don't know why. I can send it later on down the function line though.
           reject(error);
         } else {
           console.log("resolving results");
@@ -48,6 +48,7 @@ function sqlPromise(message, sql, errorMessage) {
       5000
     );
   });
+  return waitForQuery;
 }
 
 function sayDatabaseError(message, error) {
@@ -55,26 +56,12 @@ function sayDatabaseError(message, error) {
   console.log(error);
 }
 
-function callProcedure(procedure, guild, value) {
-  let sql = `CALL ${procedure}(${guild}, ${value});`;
-  var waitForQuery = sqlPromise(message, sql, `Error calling ${procedure}`);
-  waitForQuery
-    .then(result => {
-      viewSettings(message);
-    })
-    .catch(error => {
-      sayDatabaseError(message, error);
-    });
+function test(){
+    console.log("test");
 }
-
-function test() {
-  console.log("test");
-}
-
 module.exports = {
-  viewSettings: viewSettings,
-  sqlPromise: sqlPromise,
-  sayDatabaseError: sayDatabaseError,
-  callProcedure: callProcedure,
-  test: test
-};
+    viewSettings:viewSettings,
+    sqlPromise:sqlPromise,
+    sayDatabaseError:sayDatabaseError,
+    test:test
+}

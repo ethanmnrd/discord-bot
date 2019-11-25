@@ -1,6 +1,6 @@
 var guildMap = new Map();
 var db = require("../db");
-
+const sqlFunctions = require("../requires/sql.js");
 
 const mutePrefix = "mute";
 const kickPrefix = "kick";
@@ -39,7 +39,7 @@ function createVote(message, voteType) {
 
 //userId = user it is against?
 //deletes vote from guildmap?
-function deleteVote(guildID, userID, message) {
+function deleteVote(guildID, userID, message, punished) {
   var aGuildsStorage = guildMap.get(guildID).usersBeingVoted;
   var success = aGuildsStorage.delete(userID);
   if (success != true) {
@@ -55,8 +55,17 @@ function deleteVote(guildID, userID, message) {
     guildMap.delete(guildID);
   }
   console.log(guildMap);
+  
+  console.log("moo");
+  var sql = "CALL storeVote("+ guildID + "," + userID+ "," + punished +")";
+  console.log(sql);
+  db.query(sql, function (error, results, fields) {
+  if (error) throw error;
+});
+  
 }
 
+//for individual guilds inside guildmap
 function GuildVoteStorage(message) {
   this.guildName = message.guild.name; //deletable
   this.usersBeingVoted = new Map(); //stores VoteAgainstUser objects
@@ -65,7 +74,7 @@ function GuildVoteStorage(message) {
     //if there is no vote being cast for that user, create one
     if (!this.usersBeingVoted.has(userAgainst.id)) {
       let sql = "CALL getVoteSettings(" + message.guild.id + ")";
-      var waitForSettings = sqlPromise(
+      var waitForSettings = sqlFunctions.sqlPromise(
         message,
         sql,
         "Error retrieving vote settings"
@@ -88,7 +97,8 @@ function GuildVoteStorage(message) {
             result.timeLimit,
             message.guild.id,
             userAgainst.id,
-            message
+            message,
+			0
           );
           this.usersBeingVoted.set(
             userAgainst.id,
@@ -140,7 +150,12 @@ function VoteAgainstUser(voteType, userAgainst, deleteTimeOut, votesNeeded) {
       return;
     }
 
-    console.log(this.deleteTimeOut._idleTimeout);
+	//store tally into database
+	var sql = "CALL storeTally("+ message.guild.id + "," +message.author.id+ "," + userAgainst.id +")";
+	console.log(sql);
+	db.query(sql, function (error, results, fields) {
+	if (error) throw error;
+	});
 
     this.votes = this.votes + 1; //increment votes by 1
     this.usersWhoVoted.set(message.author.id, undefined);
@@ -168,7 +183,7 @@ function VoteAgainstUser(voteType, userAgainst, deleteTimeOut, votesNeeded) {
         this.userAgainst.setVoiceChannel(null);
       }
       clearTimeout(deleteTimeOut);
-      deleteVote(message.guild.id, userAgainst.id, message);
+      deleteVote(message.guild.id, userAgainst.id, message, 1);
     } //end this.votes == this.votesneeded
   };
 }
@@ -176,29 +191,6 @@ function VoteAgainstUser(voteType, userAgainst, deleteTimeOut, votesNeeded) {
 //bot will say the string in 'words' param
 function say(message, words) {
   message.channel.send(words);
-}
-
-//returns a promise of sql query, which resolves on result.
-//says message to channel on error
-//places guildid in ? slot.
-function sqlPromise(message, sql, errorMessage) {
-  var waitForQuery = new Promise((resolve, reject) => {
-    db.query(
-      sql,
-      (error, results, fields) => {
-        if (error) {
-          console.log(error); //this probably isn't sent. I don't know why. I can send it later on down the function line.
-          message.channel.send(errorMessage); //this isn't sent. I don't know why. I can send it later on down the function line though.
-          reject(error);
-        } else {
-          console.log("resolving results");
-          resolve(results);
-        }
-      },
-      5000
-    );
-  });
-  return waitForQuery;
 }
 
 function sayDatabaseError(message, error) {
