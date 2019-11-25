@@ -112,6 +112,22 @@ END//
 DELIMITER ;
 
 DELIMITER //
+CREATE PROCEDURE getGuildPrefix (guildId BIGINT UNSIGNED)
+BEGIN
+    SELECT prefix FROM guildSettings
+    WHERE guildSettings.guildId = guildId;
+END//
+DELIMITER ;
+
+DELIMITER //
+CREATE PROCEDURE getGuildTerms (guildId BIGINT UNSIGNED)
+BEGIN
+    SELECT terms FROM guildSettings
+    WHERE guildSettings.guildId = guildId;
+END//
+DELIMITER ;
+
+DELIMITER //
 CREATE PROCEDURE getGuildSettings (guildId BIGINT UNSIGNED)
 BEGIN
     SELECT * FROM guildSettings 
@@ -139,6 +155,14 @@ DELIMITER //
 CREATE PROCEDURE setGuildPrefix (guildId BIGINT UNSIGNED, prefix CHAR)
 BEGIN
 	UPDATE guildSettings SET guildSettings.prefix = prefix
+    WHERE guildSettings.guildId = guildId;
+END//
+DELIMITER ;
+
+DELIMITER //
+CREATE PROCEDURE setGuildTerms (guildId BIGINT UNSIGNED, terms VARCHAR(255))
+BEGIN
+  UPDATE guildSettings SET guildSettings.terms = terms
     WHERE guildSettings.guildId = guildId;
 END//
 DELIMITER ;

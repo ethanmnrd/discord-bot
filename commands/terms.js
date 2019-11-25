@@ -1,7 +1,5 @@
-var config = require("../config.json");
-
-function makeWelcomeChannel(msg) {
-  var server = msg.guild;
+function makeWelcomeChannel(message) {
+  var server = message.guild;
 
   if (!server.channels.find(c => c.name == "welcome" && c.type == "category")) {
     server
@@ -36,46 +34,67 @@ function makeWelcomeChannel(msg) {
   }
 }
 
-function sendTerms(msg) {
-  var server = msg.guild;
+function sendTerms(message) {
+  var server = message.guild;
 
-  const welcomeChannel = server.channels.find(
-    c => c.name == "welcome-and-rules" && c.type == "text"
-  );
+  var { sqlPromise, sayDatabaseError } = require("../requires/sql");
+  var sql = `CALL getGuildTerms(${server.id})`;
+  var query = sqlPromise(message, sql, "error retrieving guild terms");
 
-  if (!welcomeChannel)
-    throw new Error("welcome-and-rules text channel does not exist");
-  welcomeChannel
-    .fetchMessages()
-    .then(msgs => {
-      const botMsgs = msgs.filter(msg => msg.author.bot);
-      welcomeChannel.bulkDelete(botMsgs);
-      console.log("Old terms message(s) deleted.");
+  query
+    .then(results => {
+      var terms = results[0][0].terms;
+
+      const welcomeChannel = server.channels.find(
+        c => c.name == "welcome-and-rules" && c.type == "text"
+      );
+
+      if (!welcomeChannel)
+        throw new Error("welcome-and-rules text channel does not exist");
+      welcomeChannel
+        .fetchMessages()
+        .then(messages => {
+          const botMsgs = messages.filter(message => message.author.bot);
+          welcomeChannel.bulkDelete(botMsgs);
+          console.log("Old terms message(s) deleted.");
+        })
+        .catch(err => {
+          console.error("Deletion of exising bot message failed.");
+          console.error("No bot message pre-existing.");
+          console.error(err);
+        });
+      console.log("going to send terms");
+      welcomeChannel.send(terms).then(sentMsg => {
+        sentMsg
+          .react("🆗")
+          .then(() => sentMsg.react("❌"))
+          .catch(() => console.error(`One of the emojis failed to react.`));
+      });
     })
-    .catch(err => {
-      console.error("Deletion of exising bot message failed.");
-      console.error("No bot message pre-existing.");
-      console.error(err);
+    .catch(error => {
+      sayDatabaseError(message, error);
     });
-  welcomeChannel.send(config.terms).then(sentMsg => {
-    sentMsg
-      .react("🆗")
-      .then(() => sentMsg.react("❌"))
-      .catch(() => console.error(`One of the emojis failed to react.`));
-  });
 }
 
 module.exports = {
   name: "terms",
   description: "Sends the current terms as a bot message.",
   serverOnly: true,
-  execute(msg, args) {
-    makeWelcomeChannel(msg);
-    sendTerms(msg);
-    msg.reply(
-      `Terms have been sent in the ${msg.guild.channels.find(
-        c => c.name == "welcome-and-rules" && c.type == "text"
-      )} channel`
-    );
+  execute(message, args) {
+    var makePromise = new Promise((resolve, reject) => {
+      resolve(makeWelcomeChannel(message));
+    });
+    makePromise
+      .then(results => {
+        sendTerms(message);
+        message.reply(
+          `Terms have been sent in the ${message.guild.channels.find(
+            c => c.name == "welcome-and-rules" && c.type == "text"
+          )} channel`
+        );
+      })
+      .catch(error => {
+        console.log(error);
+      });
   }
 };

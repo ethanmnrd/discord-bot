@@ -5,8 +5,8 @@ const client = new Discord.Client();
 
 // db connection var
 var db = require("./db");
-
-var config = require("./config.json");
+var { sqlPromise, sayDatabaseError } = require("./requires/sql");
+var prefix = "!";
 
 // Loads commands from commands directory
 client.commands = new Discord.Collection();
@@ -23,40 +23,52 @@ client.on("ready", () => {
   console.log(`Logged in as ${client.user.tag}!`);
 });
 
-client.on("message", msg => {
-  if (msg.content === "current_prefix") {
-    console.log(`Current prefix is "${config.prefix}"`);
-    msg.channel.send(`Current prefix is "${config.prefix}"`);
-  }
+client.on("message", message => {
+  if (message.author.bot) return;
 
-  if (!msg.content.startsWith(config.prefix) || msg.author.bot) return;
+  var sql = `CALL getGuildPrefix(${message.guild.id})`;
+  var query = sqlPromise(message, sql, "error retrieving guild prefix");
 
-  var args = msg.content.slice(config.prefix.length).split(/ +/);
-  var cmdName = args.shift().toLowerCase();
+  query
+    .then(results => {
+      prefix = results[0][0].prefix;
+      if (message.content === "current_prefix") {
+        console.log(`Current prefix is "${prefix}"`);
+        message.channel.send(`Current prefix is "${prefix}"`);
+      }
 
-  if (!client.commands.has(cmdName)) return;
+      if (!message.content.startsWith(prefix) || message.author.bot) return;
 
-  var cmd = client.commands.get(cmdName);
+      var args = message.content.slice(prefix.length).split(/ +/);
+      var cmdName = args.shift().toLowerCase();
 
-  if (cmd.serverOnly && msg.channel.type !== "text") {
-    return msg.reply("I can't execute that command inside DMs!");
-  }
+      if (!client.commands.has(cmdName)) return;
 
-  if (cmd.args && !args.length) {
-    let reply = `You didn't provide any arguments, ${msg.author}!`;
+      var cmd = client.commands.get(cmdName);
 
-    if (cmd.usage) {
-      reply += `\nThe proper usage would be: \`${config.prefix}${cmd.name} ${cmd.usage}\``;
-    }
-    return msg.channel.send(reply);
-  }
+      if (cmd.serverOnly && message.channel.type !== "text") {
+        return message.reply("I can't execute that command inside DMs!");
+      }
 
-  try {
-    cmd.execute(msg, args);
-  } catch (error) {
-    console.error(error);
-    msg.reply("There was an error trying to execute that command!");
-  }
+      if (cmd.args && !args.length) {
+        let reply = `You didn't provide any arguments, ${message.author}!`;
+
+        if (cmd.usage) {
+          reply += `\nThe proper usage would be: \`${prefix}${cmd.name} ${cmd.usage}\``;
+        }
+        return message.channel.send(reply);
+      }
+
+      try {
+        cmd.execute(message, args);
+      } catch (error) {
+        console.error(error);
+        message.reply("There was an error trying to execute that command!");
+      }
+    })
+    .catch(error => {
+      sayDatabaseError(message, error);
+    });
 });
 
 //========================================= LEOS CODE STARTS HERE ============================
@@ -66,23 +78,21 @@ global.variable = "moo";
 global.gagRoleName = "bugbot-gag-role";
 global.successColor = "#0CBA00";
 
-global.hello = function(){
-    console.log("hello world");
+global.hello = function() {
+  console.log("hello world");
 };
-global.isOwner = function(msg){
-    var ownerId = msg.guild.ownerID;
-    var authorId = msg.author.id;
-    console.log(authorId);
-    console.log(ownerId);
-    if(ownerId == authorId){
-        console.log('returning true');
-        return true;
-    }
-    msg.channel.send("You are not the owner of this server!");
-    return false;
-    
+global.isOwner = function(message) {
+  var ownerId = message.guild.ownerID;
+  var authorId = message.author.id;
+  console.log(authorId);
+  console.log(ownerId);
+  if (ownerId == authorId) {
+    console.log("returning true");
+    return true;
+  }
+  message.channel.send("You are not the owner of this server!");
+  return false;
 };
-
 
 //DECLARING EVENTS
 
@@ -91,7 +101,7 @@ client.on("guildCreate", guild => {
   insertGuild(guild.id);
 });
 
-var muteRolePermissions = {SPEAK:false, SEND_MESSAGES:false};
+var muteRolePermissions = { SPEAK: false, SEND_MESSAGES: false };
 function insertGuild(guildId) {
   console.log(guildId);
   let sql = "CALL createGuild(?)";
@@ -107,40 +117,48 @@ function insertGuild(guildId) {
 }
 
 //on joining a guild, create the gag role. Wrap it in promise to make sure role exists before adding to channels
-client.on('guildCreate', guild => {
+client.on("guildCreate", guild => {
   var makeSureRoleExists = new Promise((resolve, reject) => {
-      var muteRole = guild.roles.find(val => val.name === global.gagRoleName); //look for gag
-      if(muteRole != null){ //role already exists
-          console.log('found');
-          resolve(muteRole); //return role to promise
-      }
-      else{ //role does not exist
-          console.log('not found - creating');
-          //create role and return it to promise
-          guild.createRole({name:global.gagRoleName,color:'RED', position:0},'Reason for creating role').then((role) => resolve(role));
-      }
-      console.log('done createrole function');
-  },10000);
-  makeSureRoleExists.then((muteRole) => {
-      for (var [key, channel] of guild.channels) { //add gag role to each channel. If same role added twice, everything is fine.
-          console.log(key + ' goes to ' + channel.name);
-          channel.overwritePermissions(muteRole, muteRolePermissions); 
-        }
+    var muteRole = guild.roles.find(val => val.name === global.gagRoleName); //look for gag
+    if (muteRole != null) {
+      //role already exists
+      console.log("found");
+      resolve(muteRole); //return role to promise
+    } else {
+      //role does not exist
+      console.log("not found - creating");
+      //create role and return it to promise
+      guild
+        .createRole(
+          { name: global.gagRoleName, color: "RED", position: 0 },
+          "Reason for creating role"
+        )
+        .then(role => resolve(role));
+    }
+    console.log("done createrole function");
+  }, 10000);
+  makeSureRoleExists.then(muteRole => {
+    for (var [key, channel] of guild.channels) {
+      //add gag role to each channel. If same role added twice, everything is fine.
+      console.log(key + " goes to " + channel.name);
+      channel.overwritePermissions(muteRole, muteRolePermissions);
+    }
   });
-
 });
 
 //when a channel is created, add the gag role to it
-//also event is called on each channel when 
-client.on('channelCreate',channel =>{
-  console.log('saw fresh channel ' + channel.name);
-  var muteRole = channel.guild.roles.find(val => val.name === global.gagRoleName);
-  if(muteRole == null){ //role DNE, fresh to server. Ignore all fresh channels. For some reason, does this on re-add to server but that's ok.
-      console.log("New to server, don't do anything");
-      return;
-  }
-  else{
-  channel.overwritePermissions(muteRole, muteRolePermissions);
+//also event is called on each channel when
+client.on("channelCreate", channel => {
+  console.log("saw fresh channel " + channel.name);
+  var muteRole = channel.guild.roles.find(
+    val => val.name === global.gagRoleName
+  );
+  if (muteRole == null) {
+    //role DNE, fresh to server. Ignore all fresh channels. For some reason, does this on re-add to server but that's ok.
+    console.log("New to server, don't do anything");
+    return;
+  } else {
+    channel.overwritePermissions(muteRole, muteRolePermissions);
   }
 });
 
