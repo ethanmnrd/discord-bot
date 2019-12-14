@@ -1,0 +1,26 @@
+{
+  "name": "discord-bot",
+  "version": "1.0.0",
+  "description": "Discord Bot using ML to beat users in games.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ethanmnrd/discord-bot.git"
+  },
+  "author": "Ethan Maynard, Leo Le, Lok Man Chu",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/ethanmnrd/discord-bot/issues"
+  },
+  "homepage": "https://github.com/ethanmnrd/discord-bot#readme",
+  "dependencies": {
+    "@discordjs/uws": "^10.149.0",
+    "clean": "^4.0.2",
+    "discord.js": "^11.5.1",
+    "dotenv": "^8.2.0",
+    "mysql": "^2.17.1"
+  }
+}

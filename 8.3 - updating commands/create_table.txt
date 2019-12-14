@@ -1,0 +1,155 @@
+DROP DATABASE bugbot;
+CREATE DATABASE bugbot;
+
+USE bugbot;
+
+CREATE TABLE guilds (
+guildId BIGINT UNSIGNED,	
+PRIMARY KEY (guildid)
+);
+
+CREATE TABLE guildSettings (
+guildId BIGINT UNSIGNED,
+timeLimit int DEFAULT 20000,
+votesNeeded int DEFAULT 3,
+prefix char DEFAULT '!',
+terms varchar(255) DEFAULT 'This is the default terms and conditions message. Upon accepting, you comply with all server rules and agree that these rules are up to moderator interpretation. To set these terms, use !set terms',
+CONSTRAINT FK_guildid  FOREIGN KEY (guildId) REFERENCES guilds(guildId)
+	ON UPDATE CASCADE ON DELETE CASCADE
+);
+
+CREATE TABLE votes(
+	guildId BIGINT UNSIGNED,
+	userId BIGINT UNSIGNED,
+	punished TINYINT
+	
+);
+
+drop table tallies;
+CREATE TABLE tallies(
+	guildId BIGINT UNSIGNED,
+	fromUser VARCHAR(255),
+	againstUser VARCHAR(255)
+);
+
+drop procedure getTop;
+DELIMITER //
+CREATE PROCEDURE getTop(inGuildId BIGINT UNSIGNED)
+BEGIN
+	SELECT * FROM tallies;
+END//
+DELIMITER ;
+
+
+drop procedure storeTally;
+DELIMITER //
+CREATE PROCEDURE storeTally (inGuildId BIGINT UNSIGNED, fromUser BIGINT UNSIGNED, againstUser BIGINT UNSIGNED)
+BEGIN
+    INSERT INTO tallies VALUES(inGuildId, fromUser, againstUser);
+END//
+DELIMITER ;
+
+DELIMITER //
+CREATE PROCEDURE getTallies (guildId BIGINT UNSIGNED, userSearched BIGINT UNSIGNED)
+BEGIN
+    SELECT count(guildId) FROM tallies WHERE guildId = inGuildId AND fromUser = userSearched;
+	SELECT count(guildId) FROM tallies WHERE guildId = inGuildId AND againstUser = userSearched;
+END//
+DELIMITER ;
+
+
+
+DELIMITER //
+CREATE PROCEDURE storeVote (guildId BIGINT UNSIGNED, userId BIGINT UNSIGNED, success TINYINT)
+BEGIN
+    INSERT INTO votes VALUES(guildId,userId,success);
+END//
+DELIMITER ;
+
+DELIMITER //
+CREATE PROCEDURE getUser(inGuildId BIGINT UNSIGNED, inUserId BIGINT UNSIGNED)
+BEGIN
+	SELECT guildId, userId, punished FROM votes WHERE guildId = inGuildId AND userId = inUserId;
+END//
+DELIMITER ;
+
+drop procedure getUserCount;
+DELIMITER //
+CREATE PROCEDURE getUserCount(inGuildId BIGINT UNSIGNED, inUserId BIGINT UNSIGNED)
+BEGIN
+	SELECT count(userId) AS fail FROM votes WHERE guildId = inGuildId AND userId = inUserId AND punished = 0;
+	SELECT count(userId) AS success FROM votes WHERE guildId = inGuildId AND userId = inUserId AND punished = 1;
+	SELECT count(userId) AS total FROM votes WHERE guildId = inGuildId AND userId = inUserId;
+	SELECT count(guildId) AS guildTotal FROM votes WHERE guildId = inGuildId;
+	
+	SELECT count(guildId) AS hitsToOthers FROM tallies WHERE guildId = inGuildId AND fromUser = inUserId;
+	SELECT count(guildId) AS hitsFromOthers FROM tallies WHERE guildId = inGuildId AND againstUser = inUserId;
+	SELECT count(guildId) AS guildTallies FROM tallies WHERE guildId = inGuildId;
+	
+END//
+DELIMITER ;
+
+DELIMITER //
+CREATE PROCEDURE getGuildCount(inGuildId BIGINT UNSIGNED)
+BEGIN
+	SELECT count(guildId) AS fail FROM votes WHERE guildId = inGuildId AND punished = 0;
+	SELECT count(guildId) AS success FROM votes WHERE guildId = inGuildId AND punished = 1;
+	SELECT count(guildId) AS total FROM votes WHERE guildId = inGuildId;
+	
+END//
+DELIMITER ;
+
+DELIMITER //
+CREATE PROCEDURE createGuild (guildId BIGINT UNSIGNED)
+BEGIN
+    INSERT INTO guilds VALUES(guildId);
+    INSERT INTO guildSettings (guildId) VALUES (guildId);
+END//
+DELIMITER ;
+
+DELIMITER //
+CREATE PROCEDURE getGuilds (guildId BIGINT UNSIGNED)
+BEGIN
+    SELECT * FROM guilds;
+END//
+DELIMITER ;
+
+DELIMITER //
+CREATE PROCEDURE getVoteSettings (guildId BIGINT UNSIGNED)
+BEGIN
+    SELECT timeLimit, votesNeeded FROM guildSettings 
+    WHERE guildSettings.guildId = guildId;
+END//
+DELIMITER ;
+
+DELIMITER //
+CREATE PROCEDURE getGuildSettings (guildId BIGINT UNSIGNED)
+BEGIN
+    SELECT * FROM guildSettings 
+    WHERE guildSettings.guildId = guildId;
+END//
+DELIMITER ;
+
+DELIMITER //
+CREATE PROCEDURE setVotesNeeded (guildId BIGINT UNSIGNED,votesNeeded INT)
+BEGIN
+    UPDATE guildSettings SET guildSettings.votesNeeded = votesNeeded
+    WHERE guildSettings.guildId = guildId;
+END//
+DELIMITER ;
+
+DELIMITER //
+CREATE PROCEDURE setTimeNeeded (guildId BIGINT UNSIGNED, timeLimit INT)
+BEGIN
+    UPDATE guildSettings SET guildSettings.timeLimit = timeLimit
+    WHERE guildSettings.guildId = guildId;
+END//
+DELIMITER ;
+
+DELIMITER //
+CREATE PROCEDURE setGuildPrefix (guildId BIGINT UNSIGNED, prefix CHAR)
+BEGIN
+	UPDATE guildSettings SET guildSettings.prefix = prefix
+    WHERE guildSettings.guildId = guildId;
+END//
+DELIMITER ;
