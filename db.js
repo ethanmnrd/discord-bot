@@ -4,10 +4,10 @@ require("dotenv").config();
 var mysql = require("mysql");
 
 const connection = mysql.createConnection({
-  host: "localhost",
-  user: "root",
-  password: process.env.DB_PASSWORD,
-  database: "bugbot"
+  host: "xxxx",
+  user: "xxxx",
+  password: process.env.DB_PASSWORD_AWS,
+  database: "xxxxt"
 });
 
 connection.connect(function(err) {

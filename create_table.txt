@@ -25,17 +25,27 @@ CREATE TABLE votes(
 	
 );
 
+drop table tallies;
 CREATE TABLE tallies(
 	guildId BIGINT UNSIGNED,
-	fromUser BIGINT UNSIGNED,
-	againstUser BIGINT UNSIGNED
+	fromUser VARCHAR(255),
+	againstUser VARCHAR(255)
 );
 
-drop procedure storetally;
+drop procedure getTop;
+DELIMITER //
+CREATE PROCEDURE getTop(inGuildId BIGINT UNSIGNED)
+BEGIN
+	SELECT * FROM tallies;
+END//
+DELIMITER ;
+
+
+drop procedure storeTally;
 DELIMITER //
 CREATE PROCEDURE storeTally (inGuildId BIGINT UNSIGNED, fromUser BIGINT UNSIGNED, againstUser BIGINT UNSIGNED)
 BEGIN
-    INSERT INTO tallies VALUES(guildId, fromUser, againstUser);
+    INSERT INTO tallies VALUES(inGuildId, fromUser, againstUser);
 END//
 DELIMITER ;
 
@@ -85,6 +95,7 @@ BEGIN
 	SELECT count(guildId) AS fail FROM votes WHERE guildId = inGuildId AND punished = 0;
 	SELECT count(guildId) AS success FROM votes WHERE guildId = inGuildId AND punished = 1;
 	SELECT count(guildId) AS total FROM votes WHERE guildId = inGuildId;
+	
 END//
 DELIMITER ;
 
@@ -107,22 +118,6 @@ DELIMITER //
 CREATE PROCEDURE getVoteSettings (guildId BIGINT UNSIGNED)
 BEGIN
     SELECT timeLimit, votesNeeded FROM guildSettings 
-    WHERE guildSettings.guildId = guildId;
-END//
-DELIMITER ;
-
-DELIMITER //
-CREATE PROCEDURE getGuildPrefix (guildId BIGINT UNSIGNED)
-BEGIN
-    SELECT prefix FROM guildSettings
-    WHERE guildSettings.guildId = guildId;
-END//
-DELIMITER ;
-
-DELIMITER //
-CREATE PROCEDURE getGuildTerms (guildId BIGINT UNSIGNED)
-BEGIN
-    SELECT terms FROM guildSettings
     WHERE guildSettings.guildId = guildId;
 END//
 DELIMITER ;
@@ -155,14 +150,6 @@ DELIMITER //
 CREATE PROCEDURE setGuildPrefix (guildId BIGINT UNSIGNED, prefix CHAR)
 BEGIN
 	UPDATE guildSettings SET guildSettings.prefix = prefix
-    WHERE guildSettings.guildId = guildId;
-END//
-DELIMITER ;
-
-DELIMITER //
-CREATE PROCEDURE setGuildTerms (guildId BIGINT UNSIGNED, terms VARCHAR(255))
-BEGIN
-  UPDATE guildSettings SET guildSettings.terms = terms
     WHERE guildSettings.guildId = guildId;
 END//
 DELIMITER ;

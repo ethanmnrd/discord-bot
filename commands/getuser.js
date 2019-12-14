@@ -25,9 +25,6 @@ function getUser(msg) {
 	 var sql = "CALL getUserCount("+ msg.guild.id + "," + userAgainst.id+")";
 	 console.log(sql);
 	 
-	  var sql2 = "CALL getTallies("+ msg.guild.id + "," + userAgainst.id+")";
-	 console.log(sql);
-	 
 	 //=================
 	 
 	  var waitForVotes= sqlFunctions.sqlPromise(
@@ -52,6 +49,7 @@ function getUser(msg) {
 		console.log(hitsFrom);
 		var guildTallies = result[6][0];
 		console.log(guildTallies);
+		
 		
 		
 		const embedMsg = new Discord.RichEmbed()

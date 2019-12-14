@@ -1,3 +1,5 @@
+const config = require("../config.json");
+
 module.exports = {
   name: "help",
   description: "List all of my commands or info about a specific command.",
@@ -12,7 +14,7 @@ module.exports = {
       data.push("Here's a list of all my commands:");
       data.push(commands.map(cmd => cmd.name).join(", "));
       data.push(
-        `\nYou can send \`${prefix}help [command name]\` to get info on a specific command!`
+        `\nYou can send \`${config.prefix}help [command name]\` to get info on a specific command!`
       );
 
       return msg.author
@@ -43,7 +45,8 @@ module.exports = {
 
     if (cmd.aliases) data.push(`**Aliases:** ${cmd.aliases.join(", ")}`);
     if (cmd.description) data.push(`**Description:** ${cmd.description}`);
-    if (cmd.usage) data.push(`**Usage:** ${prefix}${cmd.name} ${cmd.usage}`);
+    if (cmd.usage)
+      data.push(`**Usage:** ${config.prefix}${cmd.name} ${cmd.usage}`);
 
     data.push(`**Cooldown:** ${cmd.cooldown || 3} second(s)`);
 
